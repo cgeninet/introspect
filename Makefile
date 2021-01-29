@@ -1,6 +1,6 @@
 init:
 	mkdir -p coverage
-	rm coverage/cover.* || true
+	$(rm coverage/cover.*)
 
 coverage: init
 	go test -coverprofile coverage/cover.out || true
