@@ -28,6 +28,19 @@ type testStruct struct {
 }
 
 func TestStruct(t *testing.T) {
+	numInt := 2
+	ni := NewStruct(1, "/")
+	nip := NewStruct(&numInt, "/")
+	if ni.Value("/nil/") != nil {
+		t.Errorf("Value should be 'nil', but got %s", ni.Value("/nil/"))
+	}
+	if ni.Value("/int/") != 1 {
+		t.Errorf("Value should be '2', but got %s", ni.Value("/int/"))
+	}
+	if nip.Value("/int/") != numInt {
+		t.Errorf("Value should be 'numInt', but got %s", nip.Value("/int/"))
+	}
+
 	test := &testStruct{
 		FieldString:   "Hello world !",
 		FieldInt:      1337,
@@ -38,9 +51,7 @@ func TestStruct(t *testing.T) {
 
 	strJson := `{"a": 1,"vars": {"hello": "world","number": 2},"1.2": [{"str1a": "string 1 a","str1b": "string 1 b"},["a","b","c"],{"str2a": "string 2 a","str2b": null},"string 3"]}`
 	data := make(map[string]interface{})
-	e := json.Unmarshal([]byte(strJson), &data)
-	log.Println(e)
-	log.Println("====================")
+	json.Unmarshal([]byte(strJson), &data)
 
 	testOtherPtr := &otherStructPtr{OtherStringPtr: "other struct ptr"}
 	test.OtherPtr = testOtherPtr

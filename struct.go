@@ -2,7 +2,6 @@ package introspect
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 )
 
@@ -17,7 +16,6 @@ type Struct struct {
 // NewStruct : create object Struct to do introspection
 func NewStruct(obj interface{}, args ...string) *Struct {
 	me := new(Struct)
-	log.Println(len(args))
 	if len(args) > 0 {
 		me.Separator = args[0]
 	} else {
@@ -52,7 +50,10 @@ func (me *Struct) TypeOf(path string) string {
 
 // Get value from path
 func (me *Struct) Value(path string) interface{} {
-	return *me.data[path]
+	if _, ok := me.data[path]; ok {
+		return *me.data[path]
+	}
+	return nil
 }
 
 // Get ptr for path
@@ -62,7 +63,9 @@ func (me *Struct) Get(path string) *interface{} {
 
 // Set value for path
 func (me *Struct) Set(path string, value interface{}) {
-	*me.data[path] = value
+	if _, ok := me.data[path]; ok {
+		*me.data[path] = value
+	}
 }
 
 // From : https://stackoverflow.com/questions/24348184/get-pointer-to-value-using-reflection
@@ -103,11 +106,8 @@ func (me *Struct) walk(obj interface{}, path string) {
 				case reflect.Slice:
 					me.walk(itemInterface, fullpath)
 				default:
-					log.Println("struct item>", fullpath, "=", itemInterface)
 					me.data[fullpath] = &itemInterface
 				}
-			} else {
-				log.Println("priv   item>", fullpath)
 			}
 		}
 	case reflect.Map:
@@ -124,7 +124,6 @@ func (me *Struct) walk(obj interface{}, path string) {
 			case reflect.Slice:
 				me.walk(itemInterface.([]interface{}), fullpath)
 			default:
-				log.Println("map    item>", fullpath, "=", item)
 				me.data[fullpath] = &itemInterface
 			}
 		}
@@ -141,9 +140,15 @@ func (me *Struct) walk(obj interface{}, path string) {
 			case reflect.Slice:
 				me.walk(itemInterface, fullpath)
 			default:
-				log.Println("slice  item>", fullpath, "=", itemInterface)
 				me.data[fullpath] = &itemInterface
 			}
+		}
+	default:
+		if reflect.TypeOf(obj).Kind() == reflect.Ptr {
+			item := reflect.ValueOf(obj).Elem().Interface()
+			me.data[path] = &item
+		} else {
+			me.data[path] = &obj
 		}
 	}
 }
