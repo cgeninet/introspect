@@ -1,8 +1,7 @@
 package introspect
 
 import (
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
+	"encoding/json"
 	"log"
 	"reflect"
 	"testing"
@@ -11,7 +10,7 @@ import (
 type otherStruct struct {
 	OtherString string
 	OtherInt    int
-	Interface   map[interface{}]interface{}
+	Interface   map[string]interface{}
 }
 
 type otherStructPtr struct {
@@ -37,22 +36,19 @@ func TestStruct(t *testing.T) {
 		SliceInt:      []int{13, 37},
 	}
 
-	yamlFile, err := ioutil.ReadFile("yaml_file_test.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
-	data := make(map[interface{}]interface{})
-	err = yaml.Unmarshal(yamlFile, &data)
-	if err != nil {
-		log.Fatal(err)
-	}
+	strJson := `{"a": 1,"vars": {"hello": "world","number": 2},"1.2": [{"str1a": "string 1 a","str1b": "string 1 b"},["a","b","c"],{"str2a": "string 2 a","str2b": null},"string 3"]}`
+	data := make(map[string]interface{})
+	e := json.Unmarshal([]byte(strJson), &data)
+	log.Println(e)
+	log.Println("====================")
 
 	testOtherPtr := &otherStructPtr{OtherStringPtr: "other struct ptr"}
 	test.OtherPtr = testOtherPtr
 	test.Other.Interface = data
 	test.Other.OtherString = "test"
 
-	is := NewStruct(test)
+	is := NewStruct(test, "/")
+	isd := NewStruct(test)
 	k := is.Keys()
 	n := len(k)
 
@@ -71,11 +67,15 @@ func TestStruct(t *testing.T) {
 		t.Errorf("TypeOf should be nil for unknown path, but got %s", is.TypeOf("NIL"))
 	}
 
-	if is.TypeOf("/otherStruct/Interface/a") != "int" {
-		t.Errorf("Value should be 'int', but got %s", is.TypeOf("/otherStruct/Interface/a"))
+	if isd.TypeOf(".otherStruct.Interface.a") != "float64" {
+		t.Errorf("Value should be 'float64', but got %s", isd.TypeOf(".otherStruct.Interface.a"))
 	}
 
-	if is.Value("/otherStruct/Interface/a") != 1 {
+	if is.TypeOf("/otherStruct/Interface/a") != "float64" {
+		t.Errorf("Value should be 'float64', but got %s", is.TypeOf("/otherStruct/Interface/a"))
+	}
+
+	if is.Value("/otherStruct/Interface/a").(float64) != 1 {
 		t.Errorf("Value should be '1', but got %s", is.Value("/otherStruct/Interface/a"))
 	}
 

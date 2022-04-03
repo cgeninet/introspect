@@ -15,9 +15,14 @@ type Struct struct {
 }
 
 // NewStruct : create object Struct to do introspection
-func NewStruct(obj interface{}) *Struct {
+func NewStruct(obj interface{}, args ...string) *Struct {
 	me := new(Struct)
-	me.Separator = "/"
+	log.Println(len(args))
+	if len(args) > 0 {
+		me.Separator = args[0]
+	} else {
+		me.Separator = "."
+	}
 
 	me.obj = obj
 	me.data = make(map[string]*interface{})

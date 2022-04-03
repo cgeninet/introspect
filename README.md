@@ -37,7 +37,7 @@ Code :
         data := make(map[interface{}]interface{})
         yaml.Unmarshal(yamlFile, &data)
 
-        is := introspect.NewStruct(data)
+        is := introspect.NewStruct(data, "/")
         for _, k := range is.Keys() {
             fmt.Println("path", k, "has value :", is.Value(k))
         }
