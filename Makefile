@@ -1,3 +1,5 @@
+.phony: init coverage all
+
 init:
 	mkdir -p coverage
 	$(rm coverage/cover.*)

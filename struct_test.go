@@ -89,16 +89,17 @@ type State struct {
 }
 
 type Monitor struct {
-	Creator              *Creator `json:"creator,omitempty"`
-	Type                 string   `json:"type,omitempty"`
-	Query                string   `json:"query,omitempty"`
-	Name                 string   `json:"name,omitempty"`
-	Message              string   `json:"message,omitempty"`
-	OverallState         string   `json:"overall_state,omitempty"`
-	OverallStateModified string   `json:"overall_state_modified,omitempty"`
-	Tags                 []string `json:"tags"`
-	Options              *Options `json:"options,omitempty"`
-	State                State    `json:"state,omitempty"`
+	Creator              *Creator  `json:"creator,omitempty"`
+	Type                 string    `json:"type,omitempty"`
+	Query                string    `json:"query,omitempty"`
+	Name                 string    `json:"name,omitempty"`
+	Message              string    `json:"message,omitempty"`
+	OverallState         string    `json:"overall_state,omitempty"`
+	OverallStateModified string    `json:"overall_state_modified,omitempty"`
+	Tags                 []string  `json:"tags"`
+	ZTags                []float32 `json:"tags"`
+	Options              *Options  `json:"options,omitempty"`
+	State                State     `json:"state,omitempty"`
 }
 
 type Creator struct {
@@ -125,6 +126,7 @@ func TestStruct(t *testing.T) {
 		Options:      o,
 		Type:         "metric alert",
 		Tags:         make([]string, 0),
+		ZTags:        make([]float32, 0),
 		OverallState: "No Data",
 	}
 
@@ -134,13 +136,13 @@ func TestStruct(t *testing.T) {
 	if m.TypeOf("NIL") != "nil" {
 		t.Errorf("TypeOf should be nil for unknown path, but got %s", m.TypeOf("NIL"))
 	}
-	if m.TypeOf("Monitor.Name") != "string" {
-		t.Errorf("TypeOf should be string, but got %s", m.TypeOf("Monitor.Name"))
+	if m.TypeOf("/Monitor/Name") != "string" {
+		t.Errorf("TypeOf should be string, but got %s", m.TypeOf("/Monitor/Name"))
 	}
-	if m.Value("Monitor.Name") != "Monitor name" {
-		t.Errorf("Value should be 'Monitor name', but got %s", m.Value("Monitor.Name"))
+	if m.Value("/Monitor/Name") != "Monitor name" {
+		t.Errorf("Value should be 'Monitor name', but got %s", m.Value("/Monitor/Name"))
 	}
-	if len(k) != 21 {
-		t.Errorf("Number of keys should be 21, but got %d", len(k))
+	if len(k) != 18 {
+		t.Errorf("Number of keys should be 18, but got %d", len(k))
 	}
 }
