@@ -1,148 +1,99 @@
 package introspect
 
 import (
-	"encoding/json"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
+	"log"
+	"reflect"
 	"testing"
 )
 
-type Period struct {
-	Seconds *json.Number `json:"seconds,omitempty"`
-	Text    *string      `json:"text,omitempty"`
-	Value   *string      `json:"value,omitempty"`
-	Name    *string      `json:"name,omitempty"`
-	Unit    *string      `json:"unit,omitempty"`
+type otherStruct struct {
+	OtherString string
+	OtherInt    int
+	Interface   map[interface{}]interface{}
 }
 
-type LogSet struct {
-	ID   *json.Number `json:"id,omitempty"`
-	Name *string      `json:"name,omitempty"`
+type otherStructPtr struct {
+	OtherStringPtr string
 }
 
-type TimeRange struct {
-	To   *json.Number `json:"to,omitempty"`
-	From *json.Number `json:"from,omitempty"`
-	Live *bool        `json:"live,omitempty"`
-}
-
-type QueryConfig struct {
-	LogSet        *LogSet    `json:"logset,omitempty"`
-	TimeRange     *TimeRange `json:"timeRange,omitempty"`
-	QueryString   *string    `json:"queryString,omitempty"`
-	QueryIsFailed *bool      `json:"queryIsFailed,omitempty"`
-}
-
-type ThresholdCount struct {
-	Ok               *json.Number `json:"ok,omitempty"`
-	Critical         *json.Number `json:"critical,omitempty"`
-	Warning          *json.Number `json:"warning,omitempty"`
-	Unknown          *json.Number `json:"unknown,omitempty"`
-	CriticalRecovery *json.Number `json:"critical_recovery,omitempty"`
-	WarningRecovery  *json.Number `json:"warning_recovery,omitempty"`
-	Period           *Period      `json:"period,omitenmpty"`
-	TimeAggregator   *string      `json:"timeAggregator,omitempty"`
-}
-
-type ThresholdWindows struct {
-	RecoveryWindow *string `json:"recovery_window,omitempty"`
-	TriggerWindow  *string `json:"trigger_window,omitempty"`
-}
-
-type NoDataTimeframe int
-
-type Options struct {
-	NoDataTimeframe   NoDataTimeframe   `json:"no_data_timeframe,omitempty"`
-	NotifyAudit       bool              `json:"notify_audit,omitempty"`
-	NotifyNoData      bool              `json:"notify_no_data,omitempty"`
-	RenotifyInterval  int               `json:"renotify_interval,omitempty"`
-	NewHostDelay      int               `json:"new_host_delay,omitempty"`
-	EvaluationDelay   int               `json:"evaluation_delay,omitempty"`
-	Silenced          map[string]int    `json:"silenced,omitempty"`
-	TimeoutH          int               `json:"timeout_h,omitempty"`
-	EscalationMessage string            `json:"escalation_message,omitempty"`
-	Thresholds        *ThresholdCount   `json:"thresholds,omitempty"`
-	ThresholdWindows  *ThresholdWindows `json:"threshold_windows,omitempty"`
-	IncludeTags       bool              `json:"include_tags,omitempty"`
-	RequireFullWindow bool              `json:"require_full_window,omitempty"`
-	Locked            bool              `json:"locked,omitempty"`
-	EnableLogsSample  bool              `json:"enable_logs_sample,omitempty"`
-	QueryConfig       *QueryConfig      `json:"queryConfig,omitempty"`
-}
-
-type TriggeringValue struct {
-	FromTs *int `json:"from_ts,omitempty"`
-	ToTs   *int `json:"to_ts,omitempty"`
-	Value  *int `json:"value,omitempty"`
-}
-
-type GroupData struct {
-	LastNoDataTs    int              `json:"last_nodata_ts,omitempty"`
-	LastNotifiedTs  int              `json:"last_notified_ts,omitempty"`
-	LastResolvedTs  int              `json:"last_resolved_ts,omitempty"`
-	LastTriggeredTs int              `json:"last_triggered_ts,omitempty"`
-	Name            string           `json:"name,omitempty"`
-	Status          string           `json:"status,omitempty"`
-	TriggeringValue *TriggeringValue `json:"triggering_value,omitempty"`
-}
-
-type State struct {
-	Groups map[string]GroupData `json:"groups,omitempty"`
-}
-
-type Monitor struct {
-	Creator              *Creator  `json:"creator,omitempty"`
-	Type                 string    `json:"type,omitempty"`
-	Query                string    `json:"query,omitempty"`
-	Name                 string    `json:"name,omitempty"`
-	Message              string    `json:"message,omitempty"`
-	OverallState         string    `json:"overall_state,omitempty"`
-	OverallStateModified string    `json:"overall_state_modified,omitempty"`
-	Tags                 []string  `json:"tags"`
-	ZTags                []float32 `json:"tags"`
-	Options              *Options  `json:"options,omitempty"`
-	State                State     `json:"state,omitempty"`
-}
-
-type Creator struct {
-	Email  string `json:"email,omitempty"`
-	Handle string `json:"handle,omitempty"`
-	Name   string `json:"name,omitempty"`
+type testStruct struct {
+	FieldString   string
+	FieldInt      int
+	privateString string
+	Other         otherStruct
+	OtherPtr      *otherStructPtr
+	SliceString   []string
+	SliceInt      []int
 }
 
 func TestStruct(t *testing.T) {
-
-	o := &Options{
-		NotifyNoData:      true,
-		NotifyAudit:       false,
-		Locked:            false,
-		NoDataTimeframe:   120,
-		NewHostDelay:      600,
-		RequireFullWindow: true,
-		Silenced:          map[string]int{},
-	}
-	f := &Monitor{
-		Message:      "Test message",
-		Query:        "max(last_1m):max:custom.zookeeper.isleader{env:prod} < 1",
-		Name:         "Monitor name",
-		Options:      o,
-		Type:         "metric alert",
-		Tags:         make([]string, 0),
-		ZTags:        make([]float32, 0),
-		OverallState: "No Data",
+	test := &testStruct{
+		FieldString:   "Hello world !",
+		FieldInt:      1337,
+		privateString: "private str",
+		SliceString:   []string{"LE", "ET"},
+		SliceInt:      []int{13, 37},
 	}
 
-	m := NewStruct(f)
-	k := m.Keys()
+	yamlFile, err := ioutil.ReadFile("yaml_file_test.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	data := make(map[interface{}]interface{})
+	err = yaml.Unmarshal(yamlFile, &data)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if m.TypeOf("NIL") != "nil" {
-		t.Errorf("TypeOf should be nil for unknown path, but got %s", m.TypeOf("NIL"))
+	testOtherPtr := &otherStructPtr{OtherStringPtr: "other struct ptr"}
+	test.OtherPtr = testOtherPtr
+	test.Other.Interface = data
+	test.Other.OtherString = "test"
+
+	is := NewStruct(test)
+	k := is.Keys()
+	n := len(k)
+
+	log.Println("Keys :")
+	for _, i := range k {
+		log.Println(i, "=", is.Value(i))
 	}
-	if m.TypeOf("/Monitor/Name") != "string" {
-		t.Errorf("TypeOf should be string, but got %s", m.TypeOf("/Monitor/Name"))
+
+	if n != 19 {
+		t.Errorf("Wrong number of keys got %d", n)
+	} else {
+		log.Println("keys", n)
 	}
-	if m.Value("/Monitor/Name") != "Monitor name" {
-		t.Errorf("Value should be 'Monitor name', but got %s", m.Value("/Monitor/Name"))
+
+	if is.TypeOf("/NIL") != "nil" {
+		t.Errorf("TypeOf should be nil for unknown path, but got %s", is.TypeOf("NIL"))
 	}
-	if len(k) != 18 {
-		t.Errorf("Number of keys should be 18, but got %d", len(k))
+
+	if is.TypeOf("/otherStruct/Interface/a") != "int" {
+		t.Errorf("Value should be 'int', but got %s", is.TypeOf("/otherStruct/Interface/a"))
+	}
+
+	if is.Value("/otherStruct/Interface/a") != 1 {
+		t.Errorf("Value should be '1', but got %s", is.Value("/otherStruct/Interface/a"))
+	}
+
+	if reflect.TypeOf(is.Get("/otherStruct/Interface/a")).Kind() != reflect.Ptr {
+		t.Errorf("Value should be 'reflect.Ptr', but got %s", reflect.TypeOf(is.Value("/otherStruct/Interface/a")).Kind())
+	}
+
+	is.Set("/otherStruct/Interface/a", 2)
+
+	if is.Value("/otherStruct/Interface/a") != 2 {
+		t.Errorf("Value should be '2', but got %s", is.Value("/otherStruct/Interface/a"))
+	}
+
+	if is.TypeOf("/otherStruct/Interface/vars/hello") != "string" {
+		t.Errorf("Value should be 'int', but got %s", is.TypeOf("/otherStruct/Interface/vars/hello"))
+	}
+
+	if is.Value("/otherStruct/Interface/vars/hello") != "world" {
+		t.Errorf("Value should be '1', but got %s", is.Value("/otherStruct/Interface/vars/hello"))
 	}
 }

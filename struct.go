@@ -140,7 +140,5 @@ func (me *Struct) walk(obj interface{}, path string) {
 				me.data[fullpath] = &itemInterface
 			}
 		}
-	default:
-		log.Println("?????? item>", path, "=", obj, "|", val)
 	}
 }
